@@ -145,7 +145,10 @@ class Experiment:
         showimg.draw()
         self.__win.flip()
         if duration is not None:
-
+            core.wait(duration)
+            self.__win.flip()
+        else:
+            psychopy.event.waitKeys()
 
     #%%%%% TASKS %%%%%
     def __overall_instructions(self):
@@ -215,7 +218,7 @@ class Experiment:
         object_stim = ImageStim(self.__win)
 
         for k in object_stimuli:
-            self.__baseline(25) # Baseline duration
+            self.__baseline(15) # Baseline duration
             self.__win.callOnFlip(self.__port.write, 'C'.encode())
 
             for j in k:
@@ -374,6 +377,7 @@ class Experiment:
         """
 
         print(f"Running naturalistic motor task...")
+
         # Load task components
         naturalistic_motor_stims = pd.read_csv(self.__path +
                                                '/naturalistic_motor_task/naturalistic_motor_task_stimuli.csv')
@@ -382,25 +386,28 @@ class Experiment:
 
         # Instructions
         print(f'Presenting naturalistic motor task instructions...')
-        self.__present_instructions(self.__path + '/naturalistic_motor_task/naturalistic_motor_task_instructions.mov') # TODO: make sure the video plays not using this function
 
-        self.__showimage(self.__path + '/naturalistic_motor_task/experimenter.png')
+        naturalistic_motor_instructions = MovieStim(self.__win, (self.__path + '/naturalistic_motor_task/naturalistic_motor_task_instructions.mov'))
+        naturalistic_motor_instructions.draw()
+        self.__win.flip()
+
+        self.__showimage((self.__path + '/naturalistic_motor_task/experimenter.png'))
 
         self.__ready()
 
         self.__wait()
 
+        # Start testing trials
         print(f'Starting naturalistic motor task testing...')
 
         for j in range(len(naturalistic_motor_stims)):
             naturalistic_motor_stim.text = naturalistic_motor_stims['stimulus'].iloc[j]
             trigger = naturalistic_motor_stims['trigger'].iloc[j]
             end_trigger = naturalistic_motor_stims['end_trigger'].iloc[j]
-            # naturalistic_motor_audio = sound.Sound(naturalistic_motor_stims['sound'].iloc[j], secs=-1, stereo=True,
-            #                                        sampleRate=22050, hamming=True, name='sound')
-            # tone = sound.Sound(beep, secs=-1, stereo=True, sampleRate=22050, hamming=True,
-            #                    name='sound')
+            audio_stim = sound.Sound(naturalistic_motor_stims['instruction'].iloc[j])
+
             time = 10
+
             self.__baseline(5)
 
             # naturalistic_motor_audio.play()
