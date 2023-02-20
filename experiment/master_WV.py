@@ -23,7 +23,7 @@ os.chdir(_thisDir)
 
 class Experiment:
 
-    def __init__(self, portname, restart=False, blank_rs=True, fullscreen=False):
+    def __init__(self, portname, memory_condition, restart=False, blank_rs=True, fullscreen=False):
         self.__port_name = portname
         self.__path = '/Users/emilia/Documents/Dementia task piloting/Lumo'
         self.__restart = restart
@@ -38,6 +38,7 @@ class Experiment:
         self.__this_exp = None
         self.__rs_format = blank_rs
         self.__fullscreen = fullscreen
+        self.__memory_condition = memory_condition
 
     #%%%%% SETTING UP EXPERIMENT %%%%%
     def __setup(self):
@@ -90,15 +91,6 @@ class Experiment:
         self.__fixation_cross = TextStim(self.__win, text='+', color=(-1, -1, 1))
 
     #%%%%% SOME USEFUL FUNCTIONS %%%%%
-    def __get_restart(self):
-        if self.__restart:
-            restart_point = {'Task to restart from': ''}
-            dlg = gui.DlgFromDict(dictionary=restart_point, sortKeys=False, title='Where do you want to restart from?')
-            if not dlg.OK:
-                print("User pressed 'Cancel'!")
-                core.quit()
-            return restart_point['Task to restart from']
-
     def __baseline(self, duration=30):
         baseline_text = TextStim(self.__win, text='+', height=0.3, color=(-1, -1, 1))
         self.__win.color = [0, 0, 0]
@@ -357,29 +349,182 @@ class Experiment:
 
     def memory_task(self):
 
-        # Encoding phase
-        question_text = TextStim(self.__win, text='Indoor or outdoor?')
-        encoding_stimuli = pd.read_csv((self.__path + '/memory_task/encoding_stimuli_P' + str(self.__experiment_info['Participant'])))
-        encoding_data = []
-        for i in range(75):
-            stimulus = encoding_stimuli[i]
+        """
+
+        Implicit memory task
+
+        """
+        # Set up trial components
+        encoding_text = TextStim(self.__win, text='')
+        testing_text = TextStim(self.__win, text='')
+        if self.__memory_condition == 'LL':
+            encoding_text.text = 'Indoor or outdoor?'
+            testing_text.text = 'Old or new?'
+        elif self.__memory_condition == 'RR':
+            encoding_text.text = 'Outdoor or indoor?'
+            testing_text.text = 'New or old?'
+
+        correct_text = TextStim(self.__win, text = 'Correct!', color = [0, 1, -1])
+        incorrect_text = TextStim(self.__win, text = 'Incorrect', color = [1, 0, 0])
+
+        # Load stimuli
+        encoding_stimuli = pd.read_csv(self.__path + '/memory_task/encoded_stimuli_' + str(self.__memory_condition) + '.csv')
+        new_stimuli = pd.read_csv(self.__path + '/memory_task/new_stimuli_' + str(self.__memory_condition) + '.csv')
+        practice_stimuli = pd.read_csv(self.__path + '/memory_task/practice_stimuli_' + str(self.__memory_condition) + '.csv')
+
+        # Determine conditions
+        # Will this participant encode more indoor or outdoors?
+        k = rd.randint(0, 1)
+        if k == 0: # More indoor than outdoor so drop last outdoor
+            encoding_stimuli.drop(encoding_stimuli.tail(1).index,inplace=True)
+            new_stimuli.drop(new_stimuli.tail(1).index,inplace=True)
+        else: # More outdoor than indoor so drop last indoor
+            encoding_stimuli.drop(encoding_stimuli.head(1).index, inplace=True)
+            new_stimuli.drop(new_stimuli.head(1).index, inplace=True)
+
+        testing_stimuli = pd.concat((encoding_stimuli, new_stimuli))
+
+        # Randomise stimuli
+        rand_encoding_stimuli = encoding_stimuli.sample(frac=1, ignore_index=True)
+        rand_testing_stimuli = testing_stimuli.sample(frac=1, ignore_index=True)
+        rand_practice_stimuli = practice_stimuli.sample(frac=1, ignore_index=True)
+
+        # Present instructions
+        # self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_' + str(self.__memory_condition)  '.csv'))
+
+        # Practice trials
+        self.__baseline(10)
+        practice_stim = ImageStim(self.__win, image='')
+        for k in range(6):
+            practice_stim.image = rand_practice_stimuli['stimulus'][k]
             self.__clock.reset()
-            trigger_sent = False
+            key_pressed = False
             while self.__clock.getTime() < 5:
-
-                if self.__clock.getTime() < 2: # Question presented for 2000ms
-                    question_text.draw()
-
+                if self.__clock.getTime() < 2:
+                    testing_text.draw()
+                    if not key_pressed:
+                        keys = self.__kb.getKeys(keyList = ['left', 'right'], waitRelease = False)
+                        if len(keys) > 0:
+                            key_pressed = True
                 else:
-                    stimulus.draw() # Stimulus presented for 3000ms
-
+                    practice_stim.draw()
                 self.__win.flip()
 
-            ed = pd.DataFrame{''} # Record stimulus presented, trial number, reaction time, answer, old/new, indoor/outdoor
+            if key_pressed: # If a key is pressed, check if right or wrong
+                response = str(keys[-1].name)
+                if response == practice_stimuli['corr_ans'][k]:
+                    correct_text.draw()
+                else:
+                    incorrect_text.draw()
+            elif not key_pressed:
+                    incorrect_text.draw()
+
+            self.__win.flip()
+            self.__wait(2)
+
+        self.__ready()
+
+        self.__wait()
+
+        # Encoding phase
+        encoding_data = []
+
+        # Baseline & chunking?
+        # When to add triggers?
+
+        for i in range(len(rand_encoding_stimuli)):
+            stimulus = rand_encoding_stimuli['stimulus'][i]
+            correct_answer = rand_encoding_stimuli['corr_ans_encoding'][i]
+            trigger = rand_encoding_stimuli['trigger'][i]
+
+            self.__clock.reset()
+            trigger_sent = False
+            key_pressed = False
+            self.__win.callOnFlip(self.__kb.clock.reset)
+            while self.__clock.getTime() < 5:
+                if self.__clock.getTime() < 2: # Question presented for 2000ms
+                    encoding_text.draw()
+                    if not key_pressed:
+                        keys = self.__kb.getKeys(keyList = ['left', 'right'], waitRelease = False)
+                        if len(keys) > 0:
+                            key_pressed = True
+                else:
+                    stimulus.draw() # Stimulus presented for 3000ms
+                self.__win.flip()
+
+            if key_pressed: # If a key is pressed, check if right or wrong
+                response = str(keys[-1].name)
+                reaction_time = keys[-1].rt
+                if response == rand_encoding_stimuli['corr_ans'][k]:
+                    result = 1
+                else:
+                    result = 0
+            elif not key_pressed:
+                result = np.nan
+                reaction_time = np.nan
+
+            ed = pd.DataFrame({'stimulus': rand_encoding_stimuli['stimulus'][i],
+                   'condition': rand_encoding_stimuli['condition'][i],
+                   'trial_number': i,
+                   'reaction_time': reaction_time,
+                   'response': result,
+                    'correct_answer': rand_encoding_stimuli['corr_ans_encoding'][i],
+                    'key_pressed': response})
             encoding_data.append(ed)
 
-        encoding_data = pd.Concat(encoding_data)
-        encoding_data.to_csv()
+        encoding_data = pd.Concat(encoding_data, ignore_index=True)
+        encoding_data.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save)
+                                        + 'encoding_data.csv'), header=True, index=False)
+
+        # Testing phase
+        encoding_data = []
+
+        # Baseline & chunking?
+        # When to add triggers?
+
+        for i in range(len(rand_encoding_stimuli)):
+            stimulus = rand_encoding_stimuli['stimulus'][i]
+            correct_answer = rand_encoding_stimuli['corr_ans_encoding'][i]
+            trigger = rand_encoding_stimuli['trigger'][i]
+
+            self.__clock.reset()
+            trigger_sent = False
+            key_pressed = False
+            self.__win.callOnFlip(self.__kb.clock.reset)
+            while self.__clock.getTime() < 5:
+                if self.__clock.getTime() < 2:  # Question presented for 2000ms
+                    encoding_text.draw()
+                    if not key_pressed:
+                        keys = self.__kb.getKeys(keyList=['left', 'right'], waitRelease=False)
+                        if len(keys) > 0:
+                            key_pressed = True
+                else:
+                    stimulus.draw()  # Stimulus presented for 3000ms
+                self.__win.flip()
+
+            if key_pressed:  # If a key is pressed, check if right or wrong
+                response = str(keys[-1].name)
+                reaction_time = keys[-1].rt
+                if response == rand_encoding_stimuli['corr_ans'][k]:
+                    result = 1
+                else:
+                    result = 0
+            elif not key_pressed:
+                result = np.nan
+                reaction_time = np.nan
+
+            ed = pd.DataFrame({'stimulus': rand_encoding_stimuli['stimulus'][i],
+                               'condition': rand_encoding_stimuli['condition'][i],
+                               'trial_number': i,
+                               'reaction_time': reaction_time,
+                               'response': result,
+                               'correct_answer': rand_encoding_stimuli['corr_ans_encoding'][i],
+                               'key_pressed': response})
+            encoding_data.append(ed)
+
+        recall_data = pd.Concat(recall_data, ignore_index=True)
+        recall_data.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save)
+                              + 'recall_data.csv'), header=True, index=False)
 
     def visual_stimulation(self):
         '''
@@ -392,14 +537,14 @@ class Experiment:
 
         visual_stim = (self.__path + '/visual_stimulation/grating.png')
         visual_stim = ImageStim(self.__win, visual_stim)
-        frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant'] \
+        frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant']) \
                                                                                   + '.csv'))
 
         # Baseline
         self.__baseline(30)
 
         for i in len(frequencies.loc['frequency']):
-            visual_grating =
+            # visual_grating =
             frequency = frequencies.loc[:,'frequency'][i]
             trigger = frequencies.loc[frequencies[]]
             self.__clock.reset()
@@ -589,30 +734,20 @@ class Experiment:
 
     #%%%%% RUN EXPERIMENT %%%%%%
     def run(self):
-
-        tasks = [
-            ("Introduction", self.__overall_instructions, [], {}),
-            ("Auditory staircase", self.auditory_staircase, [5], {}),
-            ("Object recognition", self.object_recognition, [], {}),
-            ("Resting state", self.resting_state, [], {}),
-            ("Simple motor task", self.simple_motor_task, [], {}),
-            ("Naturalistic motor task", self.naturalistic_motor_task, [], {})
-        ]
         this_exp, filename = self.__setup()
         escape_experiment = False
         while not escape_experiment:
             escape_check = self.__kb.getKeys(keyList=['escape'], waitRelease=True)
             if 'escape' in escape_check:
                 core.quit()
-            for taskname, fn, args, kwargs in tasks:
-                if not self.__restart:
-                    fn(*args, **kwargs)
-                else:
-                    start_from = self.__get_restart()
-                    if start_from != taskname:
-                        pass
-                    else:
-                        fn(*args, **kwargs)
+            self.__overall_instructions()
+            self.object_recognition()
+            self.mismatched_negativity()
+            self.resting_state()
+            self.memory_task()
+            self.visual_stimulation()
+            self.naturalistic_motor_task()
+            self.simple_motor_task()
             self.__end_all_experiment()
 
     def test(self):
@@ -620,5 +755,5 @@ class Experiment:
         self.mismatched_negativity()
         self.__end_all_experiment()
 
-e = Experiment(portname=None, fullscreen=False)
+e = Experiment(portname=None, fullscreen=False, memory_condition='LL')
 e.test()
