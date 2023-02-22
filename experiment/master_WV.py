@@ -532,7 +532,8 @@ class Experiment:
                                         + '_' + phase + '_data.csv'), header=True, index=False)
 
             # if a == 0:
-            #     self.__present_instructions((self.__path + '/memory_task/recall_instructions.csv'))
+            #     self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
+        #     str(self.__memory_condition) + '.csv'))
             #     self.__ready()
             #     self.__wait()
 
@@ -545,27 +546,47 @@ class Experiment:
 
         '''
 
-        visual_stim = (self.__path + '/visual_stimulation/grating.png')
-        visual_stim = ImageStim(self.__win, visual_stim)
-        frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant']) \
+        # Set up trial components
+        wedge1 = visual.RadialStim(win, tex='sqrXsqr', color=1, size=1,
+                                   visibleWedge=[0, 45], radialCycles=4, angularCycles=8, interpolate=False,
+                                   autoLog=False)
+        wedge2 = visual.RadialStim(win, tex='sqrXsqr', color=-1, size=1,
+                                   visibleWedge=[0, 45], radialCycles=4, angularCycles=8, interpolate=False,
+                                   autoLog=False)
+
+        frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant'])\
                                                                                   + '.csv'))
+        # Instructions
+        self.__present_instructions(self.__path + '/visual_stimulation_task/instructions.csv')
 
         # Baseline
-        self.__baseline(30)
+        self.__baseline(10)
+
+        frequency = 0.1 # This is 1Hz
+        t = 0
+        rotation_rate = 0.1
 
         for i in len(frequencies.loc['frequency']):
-            # visual_grating =
             frequency = frequencies.loc[:,'frequency'][i]
             trigger = frequencies.loc[:, 'trigger'][i]
-            self.__clock.reset()
+
             trigger_sent = False
+            self.__clock.reset()
+
             while self.__clock.getTime() < 10:
                 if not trigger_sent:
                     self.__win.callOnFlip(self.__port.write, trigger.encode())
-                grating.draw()
+                    trigger_sent = True
+                if self.__clock.getTime() % frequency < frequency / 2.0:
+                    stim = wedge1
+                else:
+                    stim = wedge2
+                stim.ori = t * rotation_rate * 360.0
+
                 self.__win.flip()
 
-        # Stimulus shown for 10 seconds
+            self.__baseline(10)
+
         # Frequency of stimulus should be less than sampling frequency of Lumo
         # 15 seconds baseline before and after stimulus
         # 3 stimulus repetitions
