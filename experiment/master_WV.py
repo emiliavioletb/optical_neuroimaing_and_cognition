@@ -531,11 +531,11 @@ class Experiment:
         data_export.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save) \
                                         + '_' + phase + '_data.csv'), header=True, index=False)
 
-            # if a == 0:
-            #     self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
-        #     str(self.__memory_condition) + '.csv'))
-            #     self.__ready()
-            #     self.__wait()
+            if a == 0:
+                self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
+            str(self.__memory_condition) + '.csv'))
+                self.__ready()
+                self.__wait()
 
     def visual_stimulation(self):
         '''
@@ -613,7 +613,7 @@ class Experiment:
         # Instructions
         print(f'Presenting naturalistic motor task instructions...')
 
-        naturalistic_motor_instructions = MovieStim(self.__win, (self.__path + '/naturalistic_motor_task/naturalistic_motor_task_instructions.mov'))
+        naturalistic_motor_instructions = MovieStim(self.__win, (self.__path + '/naturalistic_motor_task/instruction_video.mp4'))
         naturalistic_motor_instructions.draw()
         self.__win.flip()
 
@@ -691,7 +691,7 @@ class Experiment:
 
         # Instructions
         print(f'Presenting simple motor task instructions...')
-        simple_motor_task_instructions = MovieStim(self.__win, (self.__path + '/motor_task/motor_instructions_video.mp4'))
+        simple_motor_task_instructions = MovieStim(self.__win, (self.__path + '/motor_task/instruction_video.mp4'))
         simple_motor_task_instructions.draw()
         self.__win.flip()
 
