@@ -189,8 +189,9 @@ class Experiment:
         self.__present_instructions(self.__path + '/object_recognition_task/object_recognition_instructions.csv')
 
         self.__win.color = [0, 0, 0]
+        self.__win.flip()
         ort_practice = ImageStim(self.__win, units='pix', size=(900, 600))
-        # TODO: the first background is black
+        # TODO: the first background is black  - TEST
 
         # PRACTICE TRIALS
         print(f'Starting practice object recognition trials...')
@@ -462,7 +463,7 @@ class Experiment:
             block = block.reset_index()
 
             for j in range(len(block)):
-                stimulus.setImage(block['stimulus'][j]) # TODO: way to loop through
+                stimulus.setImage(block['stimulus'][j])
                 correct_answer = block[str(correct_answer_column)][j]
                 img_trigger = block['trigger'][j]
                 ans_trigger = img_trigger + 'a'
@@ -473,6 +474,7 @@ class Experiment:
                 clock_reset = False
 
                 self.__clock.reset()
+                self.__kb.clock.reset()
 
                 while self.__clock.getTime() < 5:
                     if self.__clock.getTime() < 3:
@@ -487,9 +489,10 @@ class Experiment:
                             # ans_trigger_sent = True
                         if not clock_reset:
                             self.__win.callOnFlip(self.__kb.clock.reset)
+                            self.__kb.clearEvents() #TODO: stop it from storing keys
+                            keys = []
                             clock_reset = True
                         if not key_pressed:
-                            self.__kb.start()
                             keys = self.__kb.getKeys(keyList=['left', 'right'], waitRelease=False)
                             if len(keys) > 0:
                                 key_pressed = True
@@ -527,15 +530,15 @@ class Experiment:
                 self.__this_exp.addData('IMT_condition', [block['condition'][j]])
                 self.__this_exp.nextEntry()
 
-        data_export = pd.concat(block_data, ignore_index=True)
-        data_export.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save) \
-                                        + '_' + phase + '_data.csv'), header=True, index=False)
-
-            if a == 0:
-                self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
-            str(self.__memory_condition) + '.csv'))
-                self.__ready()
-                self.__wait()
+            data_export = pd.concat(block_data, ignore_index=True)
+            data_export.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save) \
+                                            + '_' + phase + '_data.csv'), header=True, index=False)
+            break
+            # if a == 0:
+            #     self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
+            # str(self.__memory_condition) + '.csv'))
+            #     self.__ready()
+            #     self.__wait()
 
     def visual_stimulation(self):
         '''
@@ -546,48 +549,64 @@ class Experiment:
 
         '''
 
+        print(f"Running visual stimulation paradigm")
+
         # Set up trial components
-        wedge1 = visual.RadialStim(win, tex='sqrXsqr', color=1, size=1,
-                                   visibleWedge=[0, 45], radialCycles=4, angularCycles=8, interpolate=False,
-                                   autoLog=False)
-        wedge2 = visual.RadialStim(win, tex='sqrXsqr', color=-1, size=1,
-                                   visibleWedge=[0, 45], radialCycles=4, angularCycles=8, interpolate=False,
-                                   autoLog=False)
+        wedge_1 = visual.RadialStim(self.__win, tex='sqrXsqr', color=1, size=1,
+                                   visibleWedge=[180, 360], radialCycles=4, angularCycles=8, interpolate=False,
+                                   autoLog=False, pos=(-0.15, 0))
+        wedge_2 = visual.RadialStim(self.__win, tex='sqrXsqr', color=-1, size=1,
+                                   visibleWedge=[180, 360], radialCycles=4, angularCycles=8, interpolate=False,
+                                   autoLog=False, pos=(-0.15, 0))
 
-        frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant'])\
-                                                                                  + '.csv'))
+        fixation_cross = TextStim(self.__win, text='+', height=0.2, color=[0, 0, 0])
+
+        # frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant'])\
+        #                                                                           + '.csv'))
+        frequencies = pd.read_csv((self.__path + '/visual_stimulation/stimuli.csv'))
+        hemifield_conditions = pd.read_csv((self.__path + '/visual_stimulation/hemifield_conditions.csv'))
+
         # Instructions
-        self.__present_instructions(self.__path + '/visual_stimulation_task/instructions.csv')
+        # self.__present_instructions(self.__path + '/visual_stimulation_task/instructions.csv')
 
-        # Baseline
-        self.__baseline(10)
-
-        frequency = 0.1 # This is 1Hz
         t = 0
-        rotation_rate = 0.1
+        visual_stim_data = []
 
-        for i in len(frequencies.loc['frequency']):
-            frequency = frequencies.loc[:,'frequency'][i]
-            trigger = frequencies.loc[:, 'trigger'][i]
-
+        for i in range(0, len(frequencies.loc[:,'frequency'])):
+            frequency = 1/frequencies.loc[:,'frequency'][i]
+            # trigger = frequencies.loc[:, 'trigger'][i]
+            wedge_1.visibleWedge = list((hemifield_conditions.loc[:,'orientation1'][i],
+                                        hemifield_conditions.loc[:, 'orientation2'][i]))
+            wedge_2.visibleWedge = list((hemifield_conditions.loc[:,'orientation1'][i],
+                                        hemifield_conditions.loc[:, 'orientation2'][i]))
+            wedge_1.pos = list((hemifield_conditions.loc[:,'pos1'][i],
+                                hemifield_conditions.loc[:,'pos2'][i]))
+            wedge_2.pos = list((hemifield_conditions.loc[:,'pos1'][i],
+                                hemifield_conditions.loc[:, 'pos2'][i]))
+            side = hemifield_conditions.loc[:, 'side'][i]
             trigger_sent = False
+
+            self.__baseline(2)
+
             self.__clock.reset()
 
             while self.__clock.getTime() < 10:
-                if not trigger_sent:
-                    self.__win.callOnFlip(self.__port.write, trigger.encode())
-                    trigger_sent = True
+                fixation_cross.draw()
+                # if not trigger_sent:
+                #     self.__win.callOnFlip(self.__port.write, trigger.encode())
+                #     trigger_sent = True
                 if self.__clock.getTime() % frequency < frequency / 2.0:
-                    stim = wedge1
+                    stim = wedge_1
                 else:
-                    stim = wedge2
-                stim.ori = t * rotation_rate * 360.0
-
+                    stim = wedge_2
+                stim.draw()
                 self.__win.flip()
 
-            self.__baseline(10)
+            # self.__baseline(10)
+            df = pd.DataFrame({'frequency': [frequency],
+                               'side': [side]})
+            visual_stim_data.append(df)
 
-        # Frequency of stimulus should be less than sampling frequency of Lumo
         # 15 seconds baseline before and after stimulus
         # 3 stimulus repetitions
 
@@ -595,6 +614,9 @@ class Experiment:
 
         # Data saving
         print(f'Saving data...')
+        # visual_stim_data_export = pd.concat(visual_stim_data, ignore_index=True)
+        # visual_stim_data_export.to_csv((self.__path + '/visual_stimulation/participant_data/' + str(self.__filename_save) \
+        #                     + 'data.csv'), header=True, index=False)
 
     def naturalistic_motor_task(self):
         """
@@ -613,58 +635,60 @@ class Experiment:
         # Instructions
         print(f'Presenting naturalistic motor task instructions...')
 
-        naturalistic_motor_instructions = MovieStim(self.__win, (self.__path + '/naturalistic_motor_task/instruction_video.mp4'))
-        naturalistic_motor_instructions.draw()
-        self.__win.flip()
+        naturalistic_motor_instructions = MovieStim3(self.__win, (self.__path + '/naturalistic_motor_task/instruction_video.mp4'))
+        if naturalistic_motor_instructions.status != FINISHED:
+            naturalistic_motor_instructions.draw()
+            self.__win.flip()
 
-        self.__showimage((self.__path + '/naturalistic_motor_task/experimenter.png'))
+        # self.__ready()
 
-        self.__ready()
-
-        self.__wait()
+        # self.__wait()
 
         # Start testing trials
         print(f'Starting naturalistic motor task testing...')
 
-        for j in range(len(naturalistic_motor_stims)):
-            naturalistic_motor_stim.text = naturalistic_motor_stims['stimulus'].iloc[j]
-            trigger = naturalistic_motor_stims['trigger'].iloc[j]
-            end_trigger = naturalistic_motor_stims['end_trigger'].iloc[j]
-            audio_stim = sound.Sound(naturalistic_motor_stims['instruction'].iloc[j])
+        for k in list(range(3)):
+            for j in range(len(naturalistic_motor_stims)):
+                naturalistic_motor_stim.text = naturalistic_motor_stims['stimulus'].iloc[j]
+                trigger = naturalistic_motor_stims['trigger'].iloc[j]
+                end_trigger = naturalistic_motor_stims['end_trigger'].iloc[j]
+                audio_stim = sound.Sound(naturalistic_motor_stims['instruction'].iloc[j])
 
-            time = 10
+                time = 10
 
-            self.__baseline(5)
+                self.__baseline(5)
 
-            trigger_sent = False
-            key_pressed = False
-            sound_played = False
-            next_flip = self.__win.getFutureFlipTime(clock='ptb')
-            self.__clock.reset()
-            self.__kb.clock.reset()
-            while self.__clock.getTime() < time and not key_pressed:
-                naturalistic_motor_stim.draw()
-                if not trigger_sent:
-                    self.__win.callOnFlip(self.__port.write, trigger.encode())
-                    trigger_sent = True
-                if not sound_played:
-                    audio_stim.play(when=next_flip)
-                    sound_played = True
-                self.__win.flip()
-                keys = self.__kb.getKeys(keyList=None, waitRelease=True)
-                time += 1
-                if len(keys) > 0:
-                    break
-            self.__port.write(end_trigger.encode())
-            df = pd.DataFrame({'Stimulus': [naturalistic_motor_stim.text], 'Duration': [keys[-1].rt]})
-            naturalistic_motor_data.append(df)
-            self.__this_exp.addData('NMT_stimulus', naturalistic_motor_stim.text)
-            self.__this_exp.addData('NMT_duration', keys[-1].rt)
-            self.__this_exp.nextEntry()
-            self.__wait(1)
+                trigger_sent = False
+                key_pressed = False
+                sound_played = False
+                next_flip = self.__win.getFutureFlipTime(clock='ptb')
+                self.__clock.reset()
+                self.__kb.clock.reset()
+                while self.__clock.getTime() < time and not key_pressed:
+                    naturalistic_motor_stim.draw()
+                    if not trigger_sent:
+                        self.__win.callOnFlip(self.__port.write, trigger.encode())
+                        trigger_sent = True
+                    if not sound_played:
+                        audio_stim.play(when=next_flip)
+                        sound_played = True
+                    self.__win.flip()
+                    keys = self.__kb.getKeys(keyList=None, waitRelease=True)
+                    time += 1
+                    if len(keys) > 0:
+                        break
+                self.__port.write(end_trigger.encode())
+                df = pd.DataFrame({'Stimulus': [naturalistic_motor_stim.text],
+                                   'Duration': [keys[-1].rt],
+                                   'Trial': [k]})
+                naturalistic_motor_data.append(df)
+                self.__this_exp.addData('NMT_stimulus', naturalistic_motor_stim.text)
+                self.__this_exp.addData('NMT_duration', keys[-1].rt)
+                self.__this_exp.nextEntry()
+                self.__wait(1)
 
-        # Break
-        self.__break()
+            # Break
+            self.__break()
 
         # Data saving
         print(f'Saving data...')
@@ -733,9 +757,6 @@ class Experiment:
         #     self.__this_exp.addData('SMT_stimulus', j)
         #     self.__this_exp.nextEntry()
         #
-        # # Break
-        # self.__break() # TODO: how often to break?
-        #
         # motor_task_data = pd.concat(motor_task_data, ignore_index=True)
         #
         # # Data saving
@@ -783,7 +804,7 @@ class Experiment:
 
     def test(self):
         self.__setup()
-        self.memory_task()
+        self.visual_stimulation()
         self.__end_all_experiment()
 
 e = Experiment(portname=None, fullscreen=True, memory_condition='LL')
