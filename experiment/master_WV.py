@@ -23,10 +23,9 @@ os.chdir(_thisDir)
 
 class Experiment:
 
-    def __init__(self, portname, memory_condition, restart=False, blank_rs=True, fullscreen=False):
+    def __init__(self, portname, memory_condition, blank_rs=True, fullscreen=False):
         self.__port_name = portname
         self.__path = '/Users/emilia/Documents/Dementia task piloting/Lumo'
-        self.__restart = restart
         self.__win = None
         self.__clock = None
         self.__kb = None
@@ -51,47 +50,7 @@ class Experiment:
         #     core.quit()
 
         self.__experiment_info['date'] = data.getDateStr()
-        self.__experiment_info['expName'] = experiment_name
-        self.__experiment_info['psychopyVersion'] = '2021.2.3'
-        filename = _thisDir + os.sep + u'data/%s_%s_%s' % (self.__experiment_info['Participant'],
-                                                           experiment_name, self.__experiment_info['date'])
-
-        self.__this_exp = data.ExperimentHandler(name=experiment_name, extraInfo=self.__experiment_info,
-                                         originPath='C:/Users/emilia/Documents/Dementia task piloting/Lumo/dementia_task_piloting/',
-                                         savePickle=True, saveWideText=True,
-                                          dataFileName=filename)
-        # Setting up a log file
-        log_file = logging.LogFile(filename + '.log', level=logging.EXP)
-        logging.console.setLevel(logging.WARNING)
-        self.__filename_save = '/P' + str(self.__experiment_info['Participant'])
-
-        end_exp_now = False
-        frame_tolerance = 0.001
-
-        if self.__port_name is not None:
-            self.__port = serial.Serial(self.__port_name, baudrate=9600)
-
-        # Set up window
-        self.__win = visual.Window([300, 300], color=[-1, -1, -1], fullscr=self.__fullscreen)
-
-        # Monitor frame rate
-        self.__experiment_info['frameRate'] = self.__win.getActualFrameRate()
-        if self.__experiment_info['frameRate'] is not None:
-            frame_dur = 1.0 / round(self.__experiment_info['frameRate'])
-        else:
-            frame_dur = 1.0 / 60.0
-
-        # Hide mouse
-        self.__win.mouseVisible = False
-
-        # Setting up useful trial components
-        self.__clock = core.Clock()
-        self.__kb = keyboard.Keyboard()
-        self.__blank = TextStim(self.__win, text='')
-        self.__fixation_cross = TextStim(self.__win, text='+', color=(-1, -1, 1))
-
-    #%%%%% SOME USEFUL FUNCTIONS %%%%%
-    def __baseline(self, duration=30):
+        self.__experimen    def __baseline(self, duration=30):
         baseline_text = TextStim(self.__win, text='+', height=0.3, color=(-1, -1, 1))
         self.__win.color = [0, 0, 0]
         self.__clock.reset()
@@ -135,7 +94,47 @@ class Experiment:
             instruction_stim = ImageStim(self.__win, j, units='pix', size=(1440, 900))
             instruction_stim.draw()
             self.__win.flip()
-            psychopy.event.waitKeys()
+            psychopy.event.waitKeys()t_info['expName'] = experiment_name
+        self.__experiment_info['psychopyVersion'] = '2021.2.3'
+        filename = _thisDir + os.sep + u'data/%s_%s_%s' % (self.__experiment_info['Participant'],
+                                                           experiment_name, self.__experiment_info['date'])
+
+        self.__this_exp = data.ExperimentHandler(name=experiment_name, extraInfo=self.__experiment_info,
+                                         originPath='C:/Users/emilia/Documents/Dementia task piloting/Lumo/dementia_task_piloting/',
+                                         savePickle=True, saveWideText=True,
+                                          dataFileName=filename)
+        # Setting up a log file
+        log_file = logging.LogFile(filename + '.log', level=logging.EXP)
+        logging.console.setLevel(logging.WARNING)
+        self.__filename_save = '/P' + str(self.__experiment_info['Participant'])
+
+        end_exp_now = False
+        frame_tolerance = 0.001
+
+        if self.__port_name is not None:
+            self.__port = serial.Serial(self.__port_name, baudrate=9600)
+
+        # Set up window
+        self.__win = visual.Window([300, 300], color=[-1, -1, -1], fullscr=self.__fullscreen)
+
+        # Monitor frame rate
+        self.__experiment_info['frameRate'] = self.__win.getActualFrameRate()
+        if self.__experiment_info['frameRate'] is not None:
+            frame_dur = 1.0 / round(self.__experiment_info['frameRate'])
+        else:
+            frame_dur = 1.0 / 60.0
+
+        # Hide mouse
+        self.__win.mouseVisible = False
+
+        # Setting up useful trial components
+        self.__clock = core.Clock()
+        self.__kb = keyboard.Keyboard()
+        self.__blank = TextStim(self.__win, text='')
+        self.__fixation_cross = TextStim(self.__win, text='+', color=(-1, -1, 1))
+
+    #%%%%% SOME USEFUL FUNCTIONS %%%%%
+
 
     def __showimage(self, image, duration):
         showimg = ImageStim(self.__win, image=(self.__path + image))
@@ -400,44 +399,43 @@ class Experiment:
         rand_practice_stimuli = practice_stimuli.sample(frac=1, ignore_index=True)
 
         # Present instructions
-        # self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_' + str(self.__memory_condition)  '.csv'))
+        self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_' + str(self.__memory_condition)  '.csv'))
 
         # Practice trials
-        # self.__baseline(5)
-        # practice_stim = ImageStim(self.__win, units='pix', size=(960, 600))
-        #
-        # for k in list(range(6)):
-        #     practice_stim.setImage(rand_practice_stimuli['stimulus'][k])
-        #     self.__clock.reset()
-        #     key_pressed = False
-        #     while self.__clock.getTime() < 5:
-        #         if self.__clock.getTime() < 3:
-        #             practice_stim.draw()
-        #         else:
-        #             encoding_text.draw()
-        #             if not key_pressed:
-        #                 keys = self.__kb.getKeys(keyList=['left', 'right'], waitRelease=False)
-        #                 if len(keys) > 0:
-        #                     key_pressed = True
-        #         self.__win.flip()
-        #
-        #     if key_pressed: # If a key is pressed, check if right or wrong
-        #         response = str(keys[-1].name)
-        #         if response == rand_practice_stimuli['corr_ans'][k]:
-        #             correct_text.draw()
-        #         else:
-        #             incorrect_text.draw()
-        #     elif not key_pressed:
-        #             no_key_pressed.draw()
-        #
-        #     self.__win.flip()
-        #     self.__wait(2)
-        #     self.__blank_screen()
-        #
-        # self.__showimage(image=(self.__path + '/memory_task/ready_text.png'))
-        #
-        # self.__wait(2)
+        self.__baseline(5)
+        practice_stim = ImageStim(self.__win, units='pix', size=(960, 600))
 
+        for k in list(range(6)):
+            practice_stim.setImage(rand_practice_stimuli['stimulus'][k])
+            self.__clock.reset()
+            key_pressed = False
+            while self.__clock.getTime() < 5:
+                if self.__clock.getTime() < 3:
+                    practice_stim.draw()
+                else:
+                    encoding_text.draw()
+                    if not key_pressed:
+                        keys = self.__kb.getKeys(keyList=['left', 'right'], waitRelease=False)
+                        if len(keys) > 0:
+                            key_pressed = True
+                self.__win.flip()
+
+            if key_pressed: # If a key is pressed, check if right or wrong
+                response = str(keys[-1].name)
+                if response == rand_practice_stimuli['corr_ans'][k]:
+                    correct_text.draw()
+                else:
+                    incorrect_text.draw()
+            elif not key_pressed:
+                    no_key_pressed.draw()
+
+            self.__win.flip()
+            self.__wait(2)
+            self.__blank_screen()
+
+        self.__showimage(image=(self.__path + '/memory_task/ready_text.png'))
+
+        self.__wait(2)
 
         # Set up trial components
         phases = ['encoding', 'recall']
@@ -448,97 +446,96 @@ class Experiment:
         text = TextStim(self.__win, text='')
         stimulus = ImageStim(self.__win, units='pix', size=(960, 600))
 
-        # for a in range(len(phases)):
-        a = 1
-        phase = phases[a]
-        text.text = prompts[a]
-        all_stimuli = list(self.__chunking(stimuli[a], 2))
-        correct_answer_column = correct_answer_columns[a]
-        block_data = []
+        for a in range(len(phases)):
+            phase = phases[a]
+            text.text = prompts[a]
+            all_stimuli = list(self.__chunking(stimuli[a], 2))
+            correct_answer_column = correct_answer_columns[a]
+            block_data = []
 
-        for block in all_stimuli:
+            for block in all_stimuli:
 
-            # self.__baseline(7)
+                # self.__baseline(7)
 
-            block = block.reset_index()
+                block = block.reset_index()
 
-            for j in range(len(block)):
-                stimulus.setImage(block['stimulus'][j])
-                correct_answer = block[str(correct_answer_column)][j]
-                img_trigger = block['trigger'][j]
-                ans_trigger = img_trigger + 'a'
+                for j in range(len(block)):
+                    stimulus.setImage(block['stimulus'][j])
+                    correct_answer = block[str(correct_answer_column)][j]
+                    img_trigger = block['trigger'][j]
+                    ans_trigger = img_trigger + 'a'
 
-                img_trigger_sent = False
-                ans_trigger_sent = False
-                key_pressed = False
-                clock_reset = False
+                    img_trigger_sent = False
+                    ans_trigger_sent = False
+                    key_pressed = False
+                    clock_reset = False
 
-                self.__clock.reset()
-                self.__kb.clock.reset()
+                    self.__clock.reset()
+                    self.__kb.clock.reset()
 
-                while self.__clock.getTime() < 5:
-                    if self.__clock.getTime() < 3:
-                        stimulus.draw()
-                        # if not img_trigger_sent:
-                        #     self.__win.callOnFlip(self.__port.write, img_trigger.encode())
-                        #     img_trigger_sent = True
-                    else:
-                        text.draw()
-                        # if not ans_trigger_sent:
-                            # self.__win.callOnFlip(self.__port.write, ans_trigger.encode())
-                            # ans_trigger_sent = True
-                        if not clock_reset:
-                            self.__win.callOnFlip(self.__kb.clock.reset)
-                            self.__kb.clearEvents() #TODO: stop it from storing keys
-                            keys = []
-                            clock_reset = True
-                        if not key_pressed:
-                            keys = self.__kb.getKeys(keyList=['left', 'right'], waitRelease=False)
-                            if len(keys) > 0:
-                                key_pressed = True
-                    self.__win.flip()
+                    while self.__clock.getTime() < 5:
+                        if self.__clock.getTime() < 3:
+                            stimulus.draw()
+                            # if not img_trigger_sent:
+                            #     self.__win.callOnFlip(self.__port.write, img_trigger.encode())
+                            #     img_trigger_sent = True
+                        else:
+                            text.draw()
+                            # if not ans_trigger_sent:
+                                # self.__win.callOnFlip(self.__port.write, ans_trigger.encode())
+                                # ans_trigger_sent = True
+                            if not clock_reset:
+                                self.__win.callOnFlip(self.__kb.clock.reset)
+                                self.__kb.clearEvents() #TODO: stop it from storing keys
+                                keys = []
+                                clock_reset = True
+                            if not key_pressed:
+                                keys = self.__kb.getKeys(keyList=['left', 'right'], waitRelease=False)
+                                if len(keys) > 0:
+                                    key_pressed = True
+                        self.__win.flip()
 
-                if key_pressed:
-                    response = str(keys[-1].name)
-                    reaction_time = keys[-1].rt
-                    if response == correct_answer:
-                        result = 1
-                    else:
-                        result = 0
-                elif not key_pressed:
-                    result = np.nan
-                    reaction_time = np.nan
-                    response = np.nan
+                    if key_pressed:
+                        response = str(keys[-1].name)
+                        reaction_time = keys[-1].rt
+                        if response == correct_answer:
+                            result = 1
+                        else:
+                            result = 0
+                    elif not key_pressed:
+                        result = np.nan
+                        reaction_time = np.nan
+                        response = np.nan
 
-                looped_data = pd.DataFrame({'phase': phase,
-                                   'stimulus': text.text,
-                                   'condition': [block['condition'][j]],
-                                   'trial_number': [block['index'][j]],
-                                   'reaction_time': [reaction_time],
-                                   'response': [result],
-                                   'correct_answer': [correct_answer],
-                                   'key_pressed': [response],
-                                    'k_num': [k]})
-                block_data.append(looped_data)
+                    looped_data = pd.DataFrame({'phase': phase,
+                                       'stimulus': text.text,
+                                       'condition': [block['condition'][j]],
+                                       'trial_number': [block['index'][j]],
+                                       'reaction_time': [reaction_time],
+                                       'response': [result],
+                                       'correct_answer': [correct_answer],
+                                       'key_pressed': [response],
+                                        'k_num': [k]})
+                    block_data.append(looped_data)
 
-                self.__this_exp.addData('IMT_stimulus', text.text)
-                self.__this_exp.addData('IMT_rt', reaction_time)
-                self.__this_exp.addData('IMT_response', result)
-                self.__this_exp.addData('IMT_corr_ans', correct_answer)
-                self.__this_exp.addData('IMT_key_pressed', response)
-                self.__this_exp.addData('IMT_phase', phase)
-                self.__this_exp.addData('IMT_condition', [block['condition'][j]])
-                self.__this_exp.nextEntry()
+                    self.__this_exp.addData('IMT_stimulus', text.text)
+                    self.__this_exp.addData('IMT_rt', reaction_time)
+                    self.__this_exp.addData('IMT_response', result)
+                    self.__this_exp.addData('IMT_corr_ans', correct_answer)
+                    self.__this_exp.addData('IMT_key_pressed', response)
+                    self.__this_exp.addData('IMT_phase', phase)
+                    self.__this_exp.addData('IMT_condition', [block['condition'][j]])
+                    self.__this_exp.nextEntry()
 
-            data_export = pd.concat(block_data, ignore_index=True)
-            data_export.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save) \
-                                            + '_' + phase + '_data.csv'), header=True, index=False)
-            break
-            # if a == 0:
-            #     self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
-            # str(self.__memory_condition) + '.csv'))
-            #     self.__ready()
-            #     self.__wait()
+                data_export = pd.concat(block_data, ignore_index=True)
+                data_export.to_csv((self.__path + '/memory_task/participant_data/' + str(self.__filename_save) \
+                                                + '_' + phase + '_data.csv'), header=True, index=False)
+                break
+                # if a == 0:
+                #     self.__present_instructions((self.__path + '/memory_task/memory_task_instructions_recall_' + \
+                # str(self.__memory_condition) + '.csv'))
+                #     self.__ready()
+                #     self.__wait()
 
     def visual_stimulation(self):
         '''
