@@ -553,45 +553,39 @@ class Experiment:
 
         # Set up trial components
         wedge_1 = visual.RadialStim(self.__win, tex='sqrXsqr', color=1, size=1,
-                                   visibleWedge=[180, 360], radialCycles=4, angularCycles=8, interpolate=False,
-                                   autoLog=False, pos=(-0.15, 0))
+                                   visibleWedge=[180, 360], radialCycles=6, angularCycles=12, interpolate=False,
+                                   autoLog=False, pos=(0, 0))
         wedge_2 = visual.RadialStim(self.__win, tex='sqrXsqr', color=-1, size=1,
-                                   visibleWedge=[180, 360], radialCycles=4, angularCycles=8, interpolate=False,
-                                   autoLog=False, pos=(-0.15, 0))
+                                   visibleWedge=[180, 360], radialCycles=6, angularCycles=12, interpolate=False,
+                                   autoLog=False, pos=(0, 0))
 
         fixation_cross = TextStim(self.__win, text='+', height=0.2, color=[0, 0, 0])
 
-        # frequencies = pd.read_csv((self.__path + '/visual_stimulation_task/stimuli_P' + str(self.__experiment_info['Participant'])\
-        #                                                                           + '.csv'))
-        frequencies = pd.read_csv((self.__path + '/visual_stimulation/stimuli.csv'))
-        hemifield_conditions = pd.read_csv((self.__path + '/visual_stimulation/hemifield_conditions.csv'))
+        # visual_conditions = pd.read_csv((self.__path + '/visual_stimulation/stimuli/P_' + \
+        #                                  str(self__experiment_info['Participant']) + 'visual_stimulation_stimuli.csv'))
+        visual_conditions = pd.read_csv((self.__path + '/visual_stimulation/visual_stimulation_stimuli.csv'))
 
         # Instructions
-        # self.__present_instructions(self.__path + '/visual_stimulation_task/instructions.csv')
+        self.__present_instructions(self.__path + '/visual_stimulation/instructions.csv')
 
         t = 0
         visual_stim_data = []
 
-        for i in range(0, len(frequencies.loc[:,'frequency'])):
-            frequency = 1/frequencies.loc[:,'frequency'][i]
-            # trigger = frequencies.loc[:, 'trigger'][i]
-            wedge_1.visibleWedge = list((hemifield_conditions.loc[:,'orientation1'][i],
-                                        hemifield_conditions.loc[:, 'orientation2'][i]))
-            wedge_2.visibleWedge = list((hemifield_conditions.loc[:,'orientation1'][i],
-                                        hemifield_conditions.loc[:, 'orientation2'][i]))
-            wedge_1.pos = list((hemifield_conditions.loc[:,'pos1'][i],
-                                hemifield_conditions.loc[:,'pos2'][i]))
-            wedge_2.pos = list((hemifield_conditions.loc[:,'pos1'][i],
-                                hemifield_conditions.loc[:, 'pos2'][i]))
-            side = hemifield_conditions.loc[:, 'side'][i]
+        for i in range(0, len(visual_conditions.loc[:,'frequency'])):
+            frequency = 1/visual_conditions.loc[:,'frequency'][i]
+            # trigger = visual_conditions.loc[:, 'trigger'][i]
+            wedge_1.visibleWedge = list((visual_conditions.loc[:,'orientation1'][i],
+                                        visual_conditions.loc[:, 'orientation2'][i]))
+            wedge_2.visibleWedge = list((visual_conditions.loc[:,'orientation1'][i],
+                                        visual_conditions.loc[:, 'orientation2'][i]))
+            side = visual_conditions.loc[:, 'side'][i]
             trigger_sent = False
 
-            self.__baseline(2)
+            self.__baseline(12)
 
             self.__clock.reset()
 
             while self.__clock.getTime() < 10:
-                fixation_cross.draw()
                 # if not trigger_sent:
                 #     self.__win.callOnFlip(self.__port.write, trigger.encode())
                 #     trigger_sent = True
@@ -600,15 +594,13 @@ class Experiment:
                 else:
                     stim = wedge_2
                 stim.draw()
+                fixation_cross.draw()
                 self.__win.flip()
 
             # self.__baseline(10)
             df = pd.DataFrame({'frequency': [frequency],
                                'side': [side]})
             visual_stim_data.append(df)
-
-        # 15 seconds baseline before and after stimulus
-        # 3 stimulus repetitions
 
         self.__break()
 
