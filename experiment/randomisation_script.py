@@ -16,7 +16,9 @@ class randomisation:
         self.__new_stimuli = None
 
     def __randomise(self, participant_number, task):
-        filepath = '/Users/emilia/Documents/Dementia task piloting/Lumo/'+ task + '/' + task + '_stimuli.csv'
+        filepath = '/Users/emilia/Documents/Dementia task piloting/Lumo/' + task + '/' + task + '_stimuli.csv'
+        if task == 'breath_holding':
+            filepath = '/Users/emilia/Documents/Dementia task piloting/Mini-CYRIL/' + task + '/' + task + '_stimuli.csv'
         original_stimuli = pd.read_csv(filepath)
 
         # Randomise stimuli
@@ -24,6 +26,8 @@ class randomisation:
 
         # Export randomised stimuli
         path = '/Users/emilia/Documents/Dementia task piloting/Lumo/' + task + '/stimuli'
+        if task == 'breath_holding':
+            path = '/Users/emilia/Documents/Dementia task piloting/Mini-CYRIL/breath_holding/stimuli'
         new_stimuli = path + '/P' + str(participant_number) + '_' + str(task) + '_stimuli.csv'
         randomised_stimuli.to_csv(new_stimuli, header=True, index=False)
 
@@ -40,6 +44,12 @@ class randomisation:
         if 'simple_motor_task' in self.__tasks:
             motor_task_stim = self.__randomise(self.__participant_number, 'simple_motor_task')
             attachments.append(motor_task_stim)
+
+        if 'visual_stimulation' in self.__tasks:
+            visual_stim_stim = self.__randomise(self.__participant_number, 'visual_stimulation')
+
+        if 'breath_holding' in self.__tasks:
+            breath_holding_stim = self.__randomise(self.__participant_number, 'breath_holding')
 
         else:
             raise ValueError('No tasks inputted!')
@@ -85,5 +95,6 @@ class randomisation:
             server.login(email, self.__password)
             server.sendmail(email, receiver, text)
 
-exp_setup = randomisation(3, ['object_recognition_task', 'simple_motor_task'], password='qgtzzyskwzmamrqr')
+exp_setup = randomisation(4, ['object_recognition_task', 'simple_motor_task', 'visual_stimulation',
+                              'breath_holding'], password='qgtzzyskwzmamrqr')
 exp_setup.send_email()
