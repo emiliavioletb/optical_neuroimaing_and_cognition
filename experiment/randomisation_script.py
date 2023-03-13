@@ -95,6 +95,6 @@ class randomisation:
             server.login(email, self.__password)
             server.sendmail(email, receiver, text)
 
-exp_setup = randomisation(4, ['object_recognition_task', 'simple_motor_task', 'visual_stimulation',
+exp_setup = randomisation(10, ['object_recognition_task', 'simple_motor_task', 'visual_stimulation',
                               'breath_holding'], password='qgtzzyskwzmamrqr')
 exp_setup.send_email()
